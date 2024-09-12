@@ -1,0 +1,36 @@
+name: Generate TLS Client Certificate
+
+on:
+  workflow_dispatch:
+
+jobs:
+  generate-cert:
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v2
+
+    - name: Generate private key
+      run: |
+        openssl genpkey -algorithm RSA -out client.key -pkeyopt rsa_keygen_bits:2048
+        echo "Private key generated."
+
+    - name: Generate certificate signing request (CSR)
+      run: |
+        openssl req -new -key client.key -out client.csr -subj "/C=US/ST=State/L=City/O=Company/OU=Org/CN=client"
+        echo "CSR generated."
+
+    - name: Generate self-signed certificate
+      run: |
+        openssl x509 -req -days 365 -in client.csr -signkey client.key -out client.crt
+        echo "TLS certificate generated."
+
+    - name: Store generated certificate and key as artifacts
+      uses: actions/upload-artifact@v2
+      with:
+        name: client-certificates
+        path: |
+          client.key
+          client.crt
+        retention-days: 1
